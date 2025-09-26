@@ -9,9 +9,12 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef uint8_t t_flags;
 
+// fixed priority 
 #define F_GPIO  (1 << 0)
 #define F_PWM   (1 << 1)
 #define F_I2C   (1 << 2)
@@ -71,18 +74,38 @@ int priority_encoder(t_flags* flags)
         *flags &= ~interupt;
         int idx = __builtin_ctz(interupt);  // convert mask -> index, counts the trailing 0s 
         handler_table[idx]();
+
     }
 
     return 0;
     
 }
 
+void add_interupt(uint8_t flag, t_flags* flags){
+    // add an interupt to flag register
+    if(*flags & flag){
+        printf("io task already suspended");
+    }else{
+        *flags &= ~flag;
+    }
+}
+
 int main(void) {
 
-    t_flags flag_register = UINT8_MAX;
+    // simulate random task order
+    int max = UINT8_MAX;
+    
+    srand(time(NULL));
+
+    volatile uint8_t val = (uint8_t) rand() % (max + 1);
+    
+    printf("rand: %d \n", val);
+    
+    t_flags flag_register = val;
 
     while(flag_register != 0){
         priority_encoder(&flag_register);
     }
+
     return 0;
 }
